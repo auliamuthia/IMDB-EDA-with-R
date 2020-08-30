@@ -1,0 +1,768 @@
+---
+title: "Movie Research"
+author: "Muthia"
+date: "8/18/2020"
+output: html_document
+---
+This script performs the following steps:
+Step 1: Step 1: Install packages, load required library packages, and set working directories
+Step 2: Retrieving Data
+Step 3: Data Pre-processing (R)
+Step 4: EDA
+
+
+Step 1: Install packages, load required library packages, and set working directories
+
+library(ggplot2)                       
+library(data.table)
+library(reshape2)
+library(recommenderlab)
+library(tidytext)
+library(textclean)
+library(wordcloud)
+library(tidyr)
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(stopwords)
+library(readxl)
+library(tm)
+library(devtools)
+library(data.table)
+library(sqldf)
+library(plotly)
+library(recommenderlab)
+library(ggthemes)
+library(gridExtra)
+library(grid)
+library(lattice)
+
+
+Step 2: Retrieving Data (IMDB)
+
+
+```{r}
+path_name <- 'C:/Users/Aulia Muthia/Downloads/Riset Mandiri/IMDB-Dataset'
+IMDB_Movies <- read.csv('C:/Users/Aulia Muthia/Downloads/Riset Mandiri/IMDB-Dataset/IMDB movies.csv', stringsAsFactors=FALSE)
+IMDB_Ratings <- read.csv('C:/Users/Aulia Muthia/Downloads/Riset Mandiri/IMDB-Dataset/IMDB ratings.csv', stringsAsFactors=FALSE)
+head(IMDB_Movies)
+head(IMDB_Ratings)
+```
+
+```{r}
+head(IMDB_Movies)
+```
+
+Step 3 : Data Pre-processing (IMDB)
+
+```{r}
+IMDB_Movies_Genre <- as.data.frame(IMDB_Movies$genre, stringsAsFactors = FALSE)
+IMDB_Movies_Genre
+
+IMDB_Movies_Genre2 <- as.data.frame(tstrsplit(IMDB_Movies_Genre[,1], 
+                                              '[,]', 
+                                              type.convert=TRUE), 
+                                    stringsAsFactors=FALSE) #DataFlair
+colnames (IMDB_Movies_Genre2) <- c("genre1", "genre2", "genre3")
+IMDB_Movies_Genre2
+
+IMDB_Movies1 <- cbind(IMDB_Movies[], IMDB_Movies_Genre2[])
+head(IMDB_Movies1)
+```
+
+Step 4: EDA
+
+  # Essential Data Analysis (Measures of Central Tendency)
+  
+a. Mean
+```{r}
+#Mean Vote
+Mean_Votes = mean(IMDB_Movies1$votes, trim = 0, na.rm = FALSE)
+Mean_Votes
+
+#Mean Rate
+Mean_Rate = mean(IMDB_Movies1$avg_vote, trim = 0, na.rm = FALSE)
+Mean_Rate
+
+#Mean_Rate_by_18yrold
+IMDB_Ratings$allgenders_18age_avg_vote[is.na(IMDB_Ratings$allgenders_18age_avg_vote)] = 0
+Mean_Rate_by_18yr = mean(IMDB_Ratings$allgenders_18age_avg_vote, trim = 0, na.rm = FALSE)
+Mean_Rate_by_18yr
+
+#Mean_Rate_by_30yrold
+IMDB_Ratings$allgenders_30age_avg_vote[is.na(IMDB_Ratings$allgenders_30age_avg_vote)] = 0
+Mean_Rate_by_30yr = mean(IMDB_Ratings$allgenders_30age_avg_vote, trim = 0, na.rm = FALSE)
+Mean_Rate_by_30yr
+
+#Mean_Rate_by_45yrold
+IMDB_Ratings$allgenders_45age_avg_vote[is.na(IMDB_Ratings$allgenders_45age_avg_vote)] = 0
+Mean_Rate_by_45yr = mean(IMDB_Ratings$allgenders_45age_avg_vote, trim = 0, na.rm = FALSE)
+Mean_Rate_by_45yr
+
+#Mean_Vote_by_18yr
+IMDB_Ratings$allgenders_18age_votes[is.na(IMDB_Ratings$allgenders_18age_votes)] = 0
+Mean_Vote_by_18yr = mean(IMDB_Ratings$allgenders_18age_votes, trim = 0, na.rm = FALSE)
+Mean_Vote_by_18yr
+
+#Mean_Vote_by_30yr
+IMDB_Ratings$allgenders_30age_votes[is.na(IMDB_Ratings$allgenders_30age_votes)] = 0
+Mean_Vote_by_30yr = mean(IMDB_Ratings$allgenders_30age_votes, trim = 0, na.rm = FALSE)
+Mean_Vote_by_30yr
+
+#Mean_Vote_by_45yr
+IMDB_Ratings$allgenders_45age_votes[is.na(IMDB_Ratings$allgenders_45age_votes)] = 0
+Mean_Vote_by_45yr = mean(IMDB_Ratings$allgenders_45age_votes, trim = 0, na.rm = FALSE)
+Mean_Vote_by_45yr
+```
+   
+  
+  b. Median
+```{r}
+#Median Vote
+Median_Votes = median(IMDB_Movies1$votes, trim = 0, na.rm = TRUE)
+Median_Votes
+
+#Median Rate
+Median_Rate = median(IMDB_Movies1$avg_vote, trim = 0, na.rm = TRUE)
+Median_Rate
+```
+  
+  c. Mode
+```{r}
+# Create the function.
+getmode <- function(avg_vote) {
+   uniqv <- unique(avg_vote)
+   uniqv[which.max(tabulate(match(avg_vote, uniqv)))]
+}
+
+# Mode of Rate
+# Create the vector with numbers.
+avg_vote <- as.vector(IMDB_Movies1$avg_vote)
+
+# Calculate the mode using the user function.
+result <- getmode(avg_vote)
+print(result)
+
+# Mode of Genre
+# Create the vector with char
+genre1_vector <- as.vector(IMDB_Movies1$genre1)
+
+# Calculate the mode using the user function.
+result_genre1 <- getmode(genre1_vector)
+print(result_genre1)
+
+
+# Mode of Year
+# Create the vector with numbers.
+year_vector <- as.vector(IMDB_Movies1$year)
+
+# Calculate the mode using the user function.
+result_year <- getmode(year_vector)
+print(result_year)
+
+```
+  
+  
+  #Visualisasi
+  1. Types of genre on IMDB 
+```{r}
+IMDB_Movies_Genre <- data.frame(IMDB_Movies1$genre,
+                                         IMDB_Movies1$genre1,
+                                         IMDB_Movies1$genre2,
+                                         IMDB_Movies1$genre3)
+
+colnames(IMDB_Movies_Genre) <- c("Genre", "Genre1", "Genre2", "Genre3")
+
+head(IMDB_Movies_Genre)
+
+genre1_plot = 
+  genre1_n %>% 
+  mutate (genre1 = fct_reorder(genre1,n)) %>%
+  ggplot(aes(x=genre1,y=n,fill=n)) + 
+  geom_col(position = "stack") +
+  labs (x="Genre 1",
+        title = "Count of Genre 1 Type on IMDB",
+        subtitle = "IMDB Data",
+        caption = "Developed by : Aulia Muthia") + 
+  scale_fill_gradient(low="red", high="blue") +
+  #flip x to y and y to x 
+  coord_flip() +
+  theme_clean() +
+  theme (
+    legend.position = "left",
+    axis.text.x = element_text(angle=90,hjust=1),
+    panel.grid.major.x=element_blank(),
+    title = element_text(face="bold")
+  ) 
+genre1_plot
+
+genre2_plot = 
+  genre2_n %>% 
+  drop_na() %>%
+  mutate (genre2 = fct_reorder(genre2,n)) %>%
+  ggplot(aes(x=genre2,y=n,fill=n)) + 
+  geom_col(position = "stack") +
+  labs (x="Genre 2",
+        title = "Count of Genre 2 Type on IMDB",
+        subtitle = "IMDB Data",
+        caption = "Developed by : Aulia Muthia") + 
+  scale_fill_gradient(low="red", high="blue") +
+  #flip x to y and y to x 
+  coord_flip() +
+  theme_clean() +
+  theme (
+    legend.position = "left",
+    axis.text.x = element_text(angle=90,hjust=1),
+    panel.grid.major.x=element_blank(),
+    title = element_text(face="bold")
+  ) 
+genre2_plot
+
+genre3_plot = 
+  genre3_n %>% 
+  drop_na() %>%
+  mutate (genre3 = fct_reorder(genre3,n)) %>%
+  ggplot(aes(x=genre3,y=n,fill=n)) + 
+  geom_col(position = "stack") +
+  labs (x="Genre 3",
+        title = "Count of Genre 3 Type on IMDB",
+        subtitle = "IMDB Data",
+        caption = "Developed by : Aulia Muthia") + 
+  scale_fill_gradient(low="red", high="blue") +
+  #flip x to y and y to x 
+  coord_flip() +
+  theme_clean() +
+  theme (
+    legend.position = "left",
+    axis.text.x = element_text(angle=90,hjust=1),
+    panel.grid.major.x=element_blank(),
+    title = element_text(face="bold")
+  ) 
+genre3_plot
+
+grid.arrange(genre1_plot,genre2_plot,genre3_plot, ncol = 3)
+
+```
+  
+  2. Average movie rating distribution
+  
+```{r}
+IMDB_Ratings %>% ggplot(aes(x=weighted_average_vote)) +  
+  geom_histogram(binwidth = 1, fill="blue") +
+  geom_freqpoly(binwidth = 1, col="hotpink") +
+  labs (x="Weighted Average Vote",
+        y="Count of Weighted Average Rate",
+        title = "Distribution of Weighted Average Rate",
+        subtitle = "IMDB Ratings",
+        caption = "Developed by : Aulia Muthia") + 
+  theme_clean() +
+  theme (
+    legend.position = "left",
+    axis.text.x = element_text(hjust=1),
+    panel.grid.major.x=element_blank(),
+    title = element_text(face="bold")
+  ) 
+
+```
+  
+  
+  3. Number of ratings per movie
+  
+```{r}
+IMDB_Movies %>% ggplot(aes(x = votes)) +
+  geom_histogram(bins = 10) + 
+  ggtitle('Histogram of Movie Ratings') 
+  geom_histogram(fill="seagreen", bins = 10000) +
+  labs (x="Number of Ratings per Movie",
+        y="Movies",
+        title = "Number of Ratings per Movie",
+        subtitle = "IMDB Ratings",
+        caption = "Developed by : Aulia Muthia") + 
+  theme_clean() +
+  theme (
+    legend.position = "left",
+    panel.grid.major.x=element_blank(),
+    title = element_text(face="bold")
+  )
+```
+  
+  
+  4. Heat map genre 1 genre 2 based on vote
+  
+```{r}
+ggplot(IMDB_Movies1, aes(genre2,genre1, fill= avg_vote)) + 
+  geom_tile() +
+  labs (x = "Genre 2",
+        y = "Genre 1",
+        title = "Genre 1 & 2 Type and Rate on IMDB",
+        subtitle = "IMDB Data",
+        caption = "Developed by : Aulia Muthia")+
+  scale_fill_gradient(low="red", high="blue") +
+   theme_clean() +
+    theme (
+    legend.position = "left",
+    axis.text.x = element_text(angle=90,hjust=1),
+    panel.grid.major.x=element_blank(),
+    title = element_text(face="bold")
+  ) 
+```
+  
+  5. genre + year and avg vote
+
+```{r}
+IMDB_Movies1 %>%
+  filter(year>=2000) %>%
+  ggplot(aes(year,genre1, fill= avg_vote)) + 
+  geom_tile() +
+  labs (x = "Year",
+        y = "Genre",
+        title = "Genre Type and Year by Rate on IMDB",
+        subtitle = "IMDB Data",
+        caption = "Developed by : Aulia Muthia")+
+  scale_fill_gradient(low="red", high="blue") +
+   theme_clean() +
+    theme (
+    legend.position = "left",
+    axis.text.x = element_text(hjust=1),
+    panel.grid.major.x=element_blank(),
+    title = element_text(face="bold")
+  )
+```
+  
+  6. top 10 movies based on votes
+  
+```{r}
+Top_10_Rated_Movies <- sqldf("SELECT title,  genre, avg_vote, votes
+                              FROM IMDB_Movies1
+                              ORDER BY votes DESC
+                             LIMIT 10")
+
+Top_10_Rated_Movies %>% 
+  mutate (title = fct_reorder(title,votes)) %>%
+  ggplot(aes(x=title,y=votes)) + 
+  geom_bar(stat="identity", fill = "blue") +
+  labs (x = "Movie Title",
+        y = "Total Votes",
+        title = "Top 10 Movies on IMDB 
+    by Number of Votes",
+        subtitle = "IMDB Data",
+        caption = "Developed by : Aulia Muthia") + 
+  geom_text(aes(label=votes), hjust=-0.1, size=3) +
+  #flip x to y and y to x 
+  coord_flip() +
+  theme_clean() +
+  theme (
+    legend.position = "left",
+    axis.text.x = element_text(angle=90,hjust=1),
+    panel.grid.major.x=element_blank(),
+    title = element_text(face="bold")
+  ) 
+```
+  
+7. top 10 movies based on rate 
+ 
+```{r}
+Top_10_Best_Vote_Movies <- sqldf("SELECT title,  genre, weighted_average_vote, votes
+                              FROM Movie_Ratings
+                              ORDER BY weighted_average_vote DESC
+                             LIMIT 10")
+
+Top_10_Best_Vote_Movies %>% 
+  mutate (title = fct_reorder(title,weighted_average_vote)) %>%
+  ggplot(aes(x=title,y=weighted_average_vote)) + 
+  geom_bar(stat="identity", fill="blue") +
+  labs (x = "Movie Title",
+        y = "Rating",
+        title = "Top 10 Movies on IMDB by Rating",
+        subtitle = "IMDB Data",
+        caption = "Developed by : Aulia Muthia") + 
+        geom_text(aes(label=weighted_average_vote), hjust=-0.1, size=3) +
+  #flip x to y and y to x 
+  coord_flip() +
+  theme_clean() +
+  theme (
+    legend.position = "left",
+    axis.text.x = element_text(hjust=1),
+    panel.grid.major.x=element_blank(),
+    title = element_text(face="bold")
+  ) 
+```
+ 
+  8. rate per country 
+  
+```{r}
+
+IMDB_Movies_Country <- as.data.frame(Movie_Ratings$country, stringsAsFactors = FALSE)
+IMDB_Movies_Country
+
+IMDB_Movies_Country <- as.data.frame(tstrsplit(IMDB_Movies_Country[,1], 
+                                              '[,]', 
+                                              type.convert=TRUE), 
+                                              stringsAsFactors=FALSE) #DataFlair
+
+colnames (IMDB_Movies_Country) <- c("Country1", "Country2")
+IMDB_Movies_Country
+
+IMDB_Movies_Country <- IMDB_Movies_Country %>%
+  select(Country1, Country2)
+
+IMDB_Movies_Country <- cbind(IMDB_Movies[], IMDB_Movies_Country[])
+head(IMDB_Movies_Country)
+
+IMDB_Movies_Country1 <- sqldf("SELECT avg(avg_vote) as average_vote, Country1 as Country
+      FROM IMDB_Movies_Country
+      GROUP BY Country
+      ORDER BY average_vote DESC
+      LIMIT 10") 
+
+IMDB_Movies_Country1 %>% 
+  mutate (Country = fct_reorder(Country,average_vote)) %>%
+    ggplot(aes(x=Country,y=average_vote,color=average_vote)) + 
+  geom_point(stat="identity") +
+  scale_color_gradient(low="blue", high="red") +
+  labs (x = "Country",
+        y = "Rating",
+        title = "Top 10 Country on IMDB by Rating",
+        subtitle = "IMDB Data",
+        caption = "Developed by : Aulia Muthia") + 
+  #flip x to y and y to x 
+  coord_flip() +
+  theme_clean() +
+  theme (
+    axis.text.x = element_text(hjust=1),
+    panel.grid.major.x=element_blank(),
+    title = element_text(face="bold")
+  )
+```
+ 
+ 
+  9. correlation #vote and rate
+  
+```{r}
+# Find the Correlation Between Number of Votes and Average Vote
+IMDB_Movies1 %>%
+  ggplot(aes(y = avg_vote, x = votes,color=votes)) +  
+  geom_point() + 
+  scale_color_gradient(low="blue", high="red") +
+  scale_x_log10() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs (x = "Log Number of Vote",
+        y = "Rate",
+        title = "Correlation Number of Vote and Rate",
+        subtitle = "IMDB Data",
+        caption = "Developed by : Aulia Muthia") + 
+  theme_clean() +
+  theme (
+    axis.text.x = element_text(hjust=1),
+    panel.grid.major.x=element_blank(),
+    title = element_text(face="bold")
+  )
+
+# Find the Correlation Coefficient
+cor(IMDB_Movies1$votes, 
+    IMDB_Movies1$avg_vote)
+```
+  
+  10. wordcloud all description
+
+```{r}
+#Convert IMDB_Movies$description to vector from dataframe
+IMDB_Movies_Description <- as.vector(IMDB_Movies$description,mode="any")
+is.vector(IMDB_Movies_Description)
+head(IMDB_Movies_Description)
+
+IMDB_Movies_Description %>% 
+  str_to_lower() %>% # a function from stringr package to convert characters to lowercase 
+  replace_contraction() %>% # replace contraction with both words
+  replace_word_elongation() %>% # replace word elongation with shortened form
+  strip() %>% #remove all non words character
+  head(10)
+
+#Tokenize & Remove Stoprwords
+stopwords <- read.csv('C:/Users/Aulia Muthia/Downloads/SEMESTER 8/SIP/stopwords/stopwords.csv')
+IMDB_Movies_Description_Words <- enframe(IMDB_Movies_Description,value = "description", name = NULL) %>% 
+                        #to convert dataframe to vector
+                        unnest_tokens(description,description) %>% 
+                        #tokenization to transform all the words from text to one data
+                        count(description,sort=T) %>% 
+                        anti_join(stopwords,by = c("description"="stopwords")) #remove stopwords
+                        #stopwords are words that do not have any additional meaning to the core concept words
+head(IMDB_Movies_Description_Words,20)
+
+#Create Wordcloud with wordcloud package in R
+IMDB_Movies_Description_Words%>% #recall the data that we will used
+  with(
+    wordcloud(
+      words = description, #column within our data that we want to visualize
+      freq = n, #column within our data that contains frequency of words
+      max.words = 100, #count of words limit that we want to visualize in wordcloud 
+      random.order = FALSE, #to visualize the data based on the frequency
+      colors = brewer.pal (name = "Dark2", 6) #color palette
+    )
+  )
+
+```
+  
+  11. wordcloud 18 yr old based on rate >7
+  
+```{r}
+#18 yr old all gender
+
+Movie_Ratings_18 <- Movie_Ratings %>% 
+                  select(description, allgenders_18age_avg_vote, allgenders_18age_votes) %>%
+                  filter(allgenders_18age_avg_vote > 7)
+
+IMDB_Movies_Description_18 <- as.vector(Movie_Ratings_18$description,mode="any")
+is.vector(IMDB_Movies_Description_18)
+
+head(IMDB_Movies_Description_18)
+
+IMDB_Movies_Description_18 %>% 
+  str_to_lower() %>% # a function from stringr package to convert characters to lowercase 
+  replace_contraction() %>% # replace contraction with both words
+  replace_word_elongation() %>% # replace word elongation with shortened form
+  strip() %>% #remove all non words character
+  head(30)
+
+IMDB_Movies_Description_Words_18 <- 
+                        enframe(IMDB_Movies_Description_18,value = "description", name = NULL) %>% 
+                        #to convert dataframe to vector
+                        unnest_tokens(description,description) %>% 
+                        #tokenization to transform all the words from text to one data
+                        count(description, sort=TRUE) %>% 
+                        anti_join(stopwords,by = c("description"="stopwords")) #remove stopwords
+                        #stopwords are words that do not have any additional meaning to the core concept words
+
+head(IMDB_Movies_Description_Words_18,20)
+
+#Create Wordcloud with wordcloud package in R
+
+IMDB_Movies_Description_Words_18%>% #recall the data that we will used
+  with(
+    wordcloud(
+      words = description, #column within our data that we want to visualize
+      freq = n, #column within our data that contains frequency of words
+      max.words = 100, #count of words limit that we want to visualize in wordcloud 
+      random.order = FALSE, #to visualize the data based on the frequency
+      colors = brewer.pal (name = "Dark2", 6) #color palette
+    )
+  )
+
+```
+  
+  12. wordcloud 30 yr old based on rate >7
+  
+```{r}
+#30 yr old all gender
+
+Movie_Ratings_30 <- Movie_Ratings %>% 
+                  select(description, allgenders_30age_avg_vote, allgenders_30age_votes) %>%
+                  filter(allgenders_30age_avg_vote > 7)
+
+#Convert IMDB_Movies$description to vector from dataframe
+IMDB_Movies_Description_30 <- as.vector(Movie_Ratings_30$description,mode="any")
+is.vector(IMDB_Movies_Description_30)
+
+head(IMDB_Movies_Description_30,6)
+
+IMDB_Movies_Description_30 %>% 
+  str_to_lower() %>% # a function from stringr package to convert characters to lowercase 
+  replace_contraction() %>% # replace contraction with both words
+  replace_word_elongation() %>% # replace word elongation with shortened form
+  strip() %>% #remove all non words character
+  head(30)
+
+#Tokenize & Remove Stoprwords
+
+stopwords <- read.csv('C:/Users/Aulia Muthia/Downloads/SEMESTER 8/SIP/stopwords/stopwords.csv')
+
+IMDB_Movies_Description_Words_30 <- enframe(IMDB_Movies_Description_30,value = "description", name = NULL) %>% 
+                        #to convert dataframe to vector
+                        unnest_tokens(description,description) %>% 
+                        #tokenization to transform all the words from text to one data
+                        count(description,sort=TRUE) %>% 
+                        anti_join(stopwords,by = c("description"="stopwords")) #remove stopwords
+                        #stopwords are words that do not have any additional meaning to the core concept words
+
+head(IMDB_Movies_Description_Words_30,20)
+
+#Create Wordcloud with wordcloud package in R
+
+IMDB_Movies_Description_Words_30%>% #recall the data that we will used
+  with(
+    wordcloud(
+      words = description, #column within our data that we want to visualize
+      freq = n, #column within our data that contains frequency of words
+      max.words = 100, #count of words limit that we want to visualize in wordcloud 
+      random.order = FALSE, #to visualize the data based on the frequency
+      colors = brewer.pal (name = "Dark2", 6) #color palette
+    )
+  )
+
+```
+
+  13. wordcloud 45 yr old based on rate >7
+
+```{r}
+#45 yr old all gender
+
+Movie_Ratings_45 <- Movie_Ratings %>% 
+                  select(description, allgenders_45age_avg_vote, allgenders_45age_votes) %>%
+                  filter(allgenders_45age_avg_vote > 7)
+
+#Convert IMDB_Movies$description to vector from dataframe
+IMDB_Movies_Description_45 <- as.vector(Movie_Ratings_45$description,mode="any")
+is.vector(IMDB_Movies_Description_45)
+
+head(IMDB_Movies_Description_45,6)
+
+IMDB_Movies_Description_45 %>% 
+  str_to_lower() %>% # a function from stringr package to convert characters to lowercase 
+  replace_contraction() %>% # replace contraction with both words
+  replace_word_elongation() %>% # replace word elongation with shortened form
+  strip() %>% #remove all non words character
+  head(30)
+
+#Tokenize & Remove Stoprwords
+
+stopwords <- read.csv('C:/Users/Aulia Muthia/Downloads/SEMESTER 8/SIP/stopwords/stopwords.csv')
+
+IMDB_Movies_Description_Words_45 <- enframe(IMDB_Movies_Description_45,value = "description", name = NULL) %>% 
+                        #to convert dataframe to vector
+                        unnest_tokens(description,description) %>% 
+                        #tokenization to transform all the words from text to one data
+                        count(description,sort=TRUE) %>% 
+                        anti_join(stopwords,by = c("description"="stopwords")) #remove stopwords
+                        #stopwords are words that do not have any additional meaning to the core concept words
+
+head(IMDB_Movies_Description_Words_45,20)
+
+#Create Wordcloud with wordcloud package in R
+
+IMDB_Movies_Description_Words_45%>% #recall the data that we will used
+  with(
+    wordcloud(
+      words = description, #column within our data that we want to visualize
+      freq = n, #column within our data that contains frequency of words
+      max.words = 100, #count of words limit that we want to visualize in wordcloud 
+      random.order = FALSE, #to visualize the data based on the frequency
+      colors = brewer.pal (name = "Dark2", 6) #color palette
+    )
+  )
+```
+
+
+  14. join data
+
+```{r}
+# Join IMDB_Movies and IMDB_Ratings based on Movie ID
+
+
+Movie_Ratings = IMDB_Movies1 %>% 
+  left_join(IMDB_Ratings, by = 'imdb_title_id') 
+
+head(Movie_Ratings,10)
+
+Movie_Ratings %>% ggplot(aes(genre1,allgenders_18age_votes, fill= allgenders_18age_avg_vote)) + 
+  geom_tile() +
+  labs (x = "Genre 2",
+        y = "Genre 1",
+        title = "Heat Map of Genre 1 & 2 Type on IMDB",
+        subtitle = "IMDB Data",
+        caption = "Developed by : Aulia Muthia")+
+  scale_fill_gradient(low="white", high="black") +
+   theme_clean() +
+    theme (
+    legend.position = "left",
+    axis.text.x = element_text(angle=90,hjust=1),
+    panel.grid.major.x=element_blank(),
+    title = element_text(face="bold")
+  ) 
+
+
+```
+  
+    15. genre preferences based on ages 
+
+```{r}
+Movie_Genre_18 <- Movie_Ratings %>% 
+                  select(genre1, allgenders_18age_avg_vote, allgenders_18age_votes) %>%
+                  filter(allgenders_18age_avg_vote > 7) %>%
+  ggplot(aes(genre1,allgenders_18age_avg_vote, fill= allgenders_18age_votes)) + 
+  geom_tile() +
+  labs (x = "Genre",
+        y = "Rate by 18 Years Old",
+        title = "Genre and Rate by 18 yr Old User on IMDB",
+        subtitle = "IMDB Data",
+        caption = "Developed by : Aulia Muthia")+
+  scale_fill_gradient(low="white", high="blue") +
+   theme_clean() +
+    theme (
+    legend.position = "left",
+    axis.text.x = element_text(angle=90,hjust=1),
+    panel.grid.major.x=element_blank(),
+    title = element_text(face="bold")
+  ) 
+
+Movie_Genre_30 <- Movie_Ratings %>% 
+                  select(genre1, allgenders_30age_avg_vote, allgenders_30age_votes) %>%
+                  filter(allgenders_30age_avg_vote > 7) %>%
+  ggplot(aes(genre1,allgenders_30age_avg_vote, fill= allgenders_30age_votes)) + 
+  geom_tile() +
+  labs (x = "Genre",
+        y = "Rate by 30 Years Old",
+        title = "Genre and Rate by 30 yr Old User on IMDB",
+        subtitle = "IMDB Data",
+        caption = "Developed by : Aulia Muthia")+
+  scale_fill_gradient(low="white", high="blue") +
+   theme_clean() +
+    theme (
+    legend.position = "left",
+    axis.text.x = element_text(angle=90,hjust=1),
+    panel.grid.major.x=element_blank(),
+    title = element_text(face="bold")
+  ) 
+
+Movie_Genre_45 <- Movie_Ratings %>% 
+                  select(genre1, allgenders_45age_avg_vote, allgenders_45age_votes) %>%
+                  filter(allgenders_45age_avg_vote > 7) %>%
+  ggplot(aes(genre1,allgenders_45age_avg_vote, fill= allgenders_45age_votes)) + 
+  geom_tile() +
+  labs (x = "Genre",
+        y = "Rate by 45 Years Old",
+        title = "Genre and Rate by 45 yr Old User on IMDB",
+        subtitle = "IMDB Data",
+        caption = "Developed by : Aulia Muthia")+
+  scale_fill_gradient(low="white", high="blue") +
+   theme_clean() +
+    theme (
+    legend.position = "left",
+    axis.text.x = element_text(angle=90,hjust=1),
+    panel.grid.major.x=element_blank(),
+    title = element_text(face="bold")
+  ) 
+   
+Movie_Genre_18
+Movie_Genre_30
+Movie_Genre_45
+               
+```
+
+  
+16. move genre based on rate
+```{r}
+ggplot(data = IMDB_Movies1) + 
+  geom_histogram(binwidth =1, aes(x = avg_vote, fill = genre1), colour = "black") +
+  labs (x = "Rate",
+        y = "Count",
+        title = "Movie Genre Based on Rate",
+        subtitle = "IMDB Data",
+        caption = "Developed by : Aulia Muthia")+
+   theme_clean() +
+    theme (
+    legend.position = "left",
+    axis.text.x = element_text(hjust=1),
+    panel.grid.major.x=element_blank(),
+    title = element_text(face="bold")) 
+```
+
